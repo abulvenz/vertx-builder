@@ -1,0 +1,30 @@
+{
+  "name": "vertx-builder",
+  "version": "1.0.0",
+  "description": "It's still a secret",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack src/main/js/index.js src/main/webroot/app.js --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abulvenz/vertx-builder.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/abulvenz/vertx-builder/issues"
+  },
+  "homepage": "https://github.com/abulvenz/vertx-builder#readme",
+  "dependencies": {
+    "bootstrap-beta": "^4.0.0-beta",
+    "fast-json-patch": "^2.0.6",
+    "jquery": "^3.2.1",
+    "jsonpath": "^1.0.0",
+    "mithril": "^1.1.5",
+    "mithril-template-builder": "^1.0.0",
+    "popper.js": "^1.12.3",
+    "webpack": "^3.8.1"
+  }
+}
