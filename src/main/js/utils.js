@@ -8,7 +8,7 @@ var isArray = (obj) => {
 };
 
 var isString = (obj) => {
-    return objj && typeof obj === 'string';
+    return obj && typeof obj === 'string';
 };
 
 var propList = obj => {

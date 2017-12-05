@@ -12,7 +12,6 @@ let Context = {
     editMode: false
 };
 
-
 let store = {
     "store": {
         "book": [
@@ -105,6 +104,9 @@ let data = {// JSON Object
                 }
             ] // JSON Array
 };
+let booktemplate_old = {"tag": "h1", "attrs": {"class": "large-font"}, "text": "@.title"};
+let booktemplate = {"tag": "div", "attrs": {"class": "card"}, "children": [{"tag": "div", "attrs": {"class": "card-header"}, "children": ["$.title"]}]};
+
 let cardTemplate = {"tag": "div", "attrs": {"class": "col-md-4"}, "children": [{
             "tag": "div",
             "attrs": {
@@ -172,42 +174,41 @@ let cardTemplate = {"tag": "div", "attrs": {"class": "col-md-4"}, "children": [{
             ],
             "skip": false
         }]};
-let booktemplate_old = {"tag": "h1", "attrs": {"class": "large-font"}, "text": "@.title"};
-let booktemplate = {"tag": "div", "attrs": {"class": "card"}, "children": [{"tag": "div", "attrs": {"class": "card-header"}, "children": ["$.title"]}]};
-
-//jsonPath(cardTemplate, "$..children[?(@.attrs.className == 'card-title')]", {applyFn: v => v.text = v.text.toLowerCase()})
-//jsonPath(cardTemplate, "$..children[?(@.attrs.className == 'card-text')]", {applyFn: v => v.text = v.text.toLowerCase()})
-
-
-
-
-
-var renderedTemplate_ =
-        render({template: booktemplate, data: store, path: '$..book[?(@.price < 9)]'});
 
 var renderedTemplate = render({template: cardTemplate, data: data, path: '$..worldpopulation[:]'});
 
-console.log('renderedTemplate', JSON.stringify(renderedTemplate))
-/**
- * Do it well
- *
- * @param {type} obj
- * @param {type} paths
- * @param {type} vals
- * @return {undefined}
- */
+var datasets = [
+    {
+        key: 'worldpopulation',
+        data: data,
+    },
+    {
+        key: 'store',
+        data: store
+    },
+    {
+        key: 'template for card',
+        data: cardTemplate
+    },
+    {
+        key: 'rederedStuff',
+        data: renderedTemplate
+    }
+];
+
+var findData = (key) => {
+    for (var i = 0; i < datasets.length; i++) {
+        if (key === datasets[i].key)
+            return datasets[i].data;
+    }
+};
+
 let applyValuesToPaths = (obj, paths, vals) => {
     let applyValueToPath = (obj, path, val) => {
         for (var pidx = 0; pidx < path.length - 1; pidx++)
             obj = obj[path[pidx]];
         obj[path[path.length - 1]] = val;
     };
-//    console.log(!!paths.length, '!!paths.length')
-//    console.log(!!vals.length, '!!vals.length')
-//    console.log(paths.length, 'paths.length')
-//    console.log(vals.length, 'vals.length')
-//    console.log(typeof vals === 'string', "typeof vals ==='string'")
-//    console.log(typeof vals, "typeof vals")
 
     if (utils.isString(paths)) {
         paths = jsonPath(obj, paths, {resultType: 'LOCATION'})
@@ -231,57 +232,12 @@ let applyValuesToPaths = (obj, paths, vals) => {
         console.log('ERROR while applying', obj, paths, vals);
     }
 };
-console.log('path', jsonPath(store, '$..book[:]', {resultType: "VALUE"}));
-console.log('value', jsonPath(cardTemplate, '$..attrs', {resultType: "VALUE"}));
 
 
-/*applyValuesToPaths(cardTemplate, jsonPath(cardTemplate, "$..children[?(@.attrs.className == 'card-title')].text", {
- resultType: "LOCATION"
- }), "HELLO");
- */
 
-//applyValuesToPaths(cardTemplate, "$..children[?(@.attrs.className == 'card-title')].text", "heLLo");
-applyValuesToPaths(cardTemplate, "$['children'][1]['children'][0]['text']", "heLLo!!    ");
-
-var mapping = {
-    "book": {
-        each: '$..book[:]',
-        as: 'book',
-        to: '$',
-        then: {
-            "$..children[?(@.attrs.className == 'card-title')]": '$.title',
-            '__CARD_TEXT__': '$.title',
-            //       ???   NESTING `?????`
-        }
-    }
-};
-
-var datasets = [
-    {
-        key: 'worldpopulation',
-        data: data,
-    },
-    {
-        key: 'store',
-        data: store
-    },
-    {
-        key: 'template for card',
-        data: cardTemplate
-    },
-    {
-        key: 'rederedStuff',
-        data: renderedTemplate
-    }
-];
-var findData = (key) => {
-    for (var i = 0; i < datasets.length; i++) {
-        if (key === datasets[i].key)
-            return datasets[i].data;
-    }
-};
 var resultTypes = ["VALUE", "PATH", "LOCATION"];
-class TestJsonPath {
+
+class InteractiveJsonPath {
     oninit(vnode) {
         vnode.state.path = '$';
         vnode.state.dataset = 'worldpopulation';
@@ -334,7 +290,8 @@ let template = {
         }
     ]
 };
-class ES6TestComponent {
+
+class RenderInRow {
     constructor() {
         this.message = 'HELLO ES6';
     }
@@ -343,18 +300,14 @@ class ES6TestComponent {
     }
 }
 
-
-
-class Wrapper {
+class Wrapper_ {
     view(vnode) {
-        console.log('wrapping', vnode.attrs.obj)
         return !vnode.attrs.obj ? null : utils.isArray(vnode.attrs.obj) ?
                 m('', vnode.attrs.obj.map(c => m(Wrapper, {obj: c}))) :
                 m(vnode.attrs.obj.tag,
                         vnode.attrs.obj.attrs,
                         vnode.attrs.obj.children ?
                         vnode.attrs.obj.children.map(c => {
-                            console.log('c', c);
                             return utils.isString(c) ? c : m(Wrapper, {obj: c})
                         }) :
                         vnode.attrs.obj.text);
@@ -362,7 +315,19 @@ class Wrapper {
 }
 
 
-
+class Wrapper {
+    view(vnode) {
+        return  utils.isArray(vnode.attrs.obj) ?
+                m('', vnode.attrs.obj.map(c => m(Wrapper, {obj: c}))) :
+                m(vnode.attrs.obj.tag,
+                        vnode.attrs.obj.attrs,
+                        vnode.attrs.obj.children ?
+                        vnode.attrs.obj.children.map(c => {
+                            return utils.isString(c) ? c : m(Wrapper, {obj: c})
+                        }) :
+                        vnode.attrs.obj.text);
+    }
+}
 
 class RenderJson {
     oninit(vnode) {
@@ -546,14 +511,14 @@ m.route.prefix('#');
 class Router {
     oncreate(vnode) {
         m.route(vnode.dom, '/', {
-            '/': ES6TestComponent,
-            '/title/:id': ES6TestComponent,
+            '/': RenderInRow,
+            '/title/:id': RenderInRow,
             '/render': {
                 render: (vnode) => {
                     return [m(Wrapper, {obj: cardTemplate}), m(RenderJson, {obj: renderedTemplate})];
                 }
             },
-            '/jsonpath': TestJsonPath,
+            '/jsonpath': InteractiveJsonPath,
             '/templatebuilder': TemplateBuilder
         });
     }
