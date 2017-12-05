@@ -396,16 +396,25 @@ class Alert {
     }
 }
 
+class NavbarBrand {
+    view(vnode) {
+        return m("a.navbar-brand[href='#']", vnode.attrs, vnode.children);
+    }
+}
+
+class NavbarToggleButton {
+    view(vnode) {
+        return m("button.navbar-toggler[aria-controls='navbarSupportedContent'][aria-expanded='false'][aria-label='Toggle navigation'][data-target='#navbarSupportedContent'][data-toggle='collapse'][type='button']",
+                m("span.navbar-toggler-icon"));
+    }
+}
+
 class Navbar {
     view(vnode) {
         return m("nav.navbar.navbar-expand-lg.navbar-light.bg-light",
                 [
-                    m("a.navbar-brand[href='#']",
-                            "Navbar"
-                            ),
-                    m("button.navbar-toggler[aria-controls='navbarSupportedContent'][aria-expanded='false'][aria-label='Toggle navigation'][data-target='#navbarSupportedContent'][data-toggle='collapse'][type='button']",
-                            m("span.navbar-toggler-icon")
-                            ),
+                    m(NavbarBrand, 'Navbar'),
+                    m(NavbarToggleButton),
                     m(".collapse.navbar-collapse[id='navbarSupportedContent']",
                             [
                                 m("ul.navbar-nav.mr-auto",

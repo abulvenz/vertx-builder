@@ -1,5 +1,5 @@
 
-import jsonPath from './jsonPath';
+import jsonPath from './jsonpath';
 import utils from './utils';
 
 var render = input => {
