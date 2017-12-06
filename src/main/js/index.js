@@ -165,7 +165,7 @@ let cardTemplate = {"tag": "div", "attrs": {"class": "col-md-4"}, "children": [{
                                 "href": "#",
                                 "className": "btn btn-primary"
                             },
-                            "text": "Nuke'em all",
+                            "text": "Make peace with them all",
                             "skip": false
                         }
                     ],
@@ -174,8 +174,6 @@ let cardTemplate = {"tag": "div", "attrs": {"class": "col-md-4"}, "children": [{
             ],
             "skip": false
         }]};
-
-var renderedTemplate = render({template: cardTemplate, data: data, path: '$..worldpopulation[:]'});
 
 var datasets = [
     {
@@ -189,12 +187,13 @@ var datasets = [
     {
         key: 'template for card',
         data: cardTemplate
-    },
-    {
-        key: 'rederedStuff',
-        data: renderedTemplate
     }
 ];
+
+var renderedTemplate = render({template: cardTemplate, data: data, path: '$..worldpopulation[:]'});
+
+
+datasets.push(    {        key: 'rederedStuff',       data: renderedTemplate}	     );
 
 var findData = (key) => {
     for (var i = 0; i < datasets.length; i++) {
