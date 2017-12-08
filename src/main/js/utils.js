@@ -33,11 +33,18 @@ var copy = obj => {
     return result;
 };
 
+var event = (vnode, fn) => {
+    return (ev) => {
+        fn(vnode, ev);
+    };
+};
+
 export default {
     propList: propList,
     isArray: isArray,
     isString: isString,
     isFunction: isFunction,
     traverse: traverse,
-    copy: copy
+    copy: copy,
+    event: event
 };

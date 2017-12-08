@@ -1,12 +1,14 @@
 import m from 'mithril';
 import jsonPath from './jsonpath';
-import { applyOperation } from 'fast-json-patch'
+import { applyOperation } from 'fast-json-patch';
 
-import render from './rendering'
+import render from './rendering';
 
 import templateBuilder from './htmltohyperscript';
 
 import utils from './utils';
+
+import Alert from './alert';
 
 let Context = {
     editMode: false
@@ -193,7 +195,8 @@ var datasets = [
 var renderedTemplate = render({template: cardTemplate, data: data, path: '$..worldpopulation[:]'});
 
 
-datasets.push(    {        key: 'rederedStuff',       data: renderedTemplate}	     );
+datasets.push({key: 'rederedStuff', data: renderedTemplate});
+
 
 var findData = (key) => {
     for (var i = 0; i < datasets.length; i++) {
@@ -262,9 +265,9 @@ class InteractiveJsonPath {
     }
     view(vnode) {
         return m('.row', [
-            m('.col-6', m('select', {onchange: event(vnode, this.changeDataset)}, datasets.map(d => m('option', d.key)))),
-            m('.col-6', m('select', {onchange: event(vnode, this.changeResultType)}, resultTypes.map(d => m('option', d + '')))),
-            m('.col-md-6', m('input', {oninput: event(vnode, this.changePath)})),
+            m('.col-6', m('select', {onchange: utils.event(vnode, this.changeDataset)}, datasets.map(d => m('option', d.key)))),
+            m('.col-6', m('select', {onchange: utils.event(vnode, this.changeResultType)}, resultTypes.map(d => m('option', d + '')))),
+            m('.col-md-6', m('input', {oninput: utils.event(vnode, this.changePath)})),
             m('.col-md-6', m('pre', vnode.state.output))
         ]);
     }
@@ -341,7 +344,7 @@ class RenderJson {
             utils.propList(vnode.attrs.obj).length ?
                     [
                         '{',
-                        m('span', {style: 'opacity:.5', onclick: event(vnode, this.toggleCollapsed)},
+                        m('span', {style: 'opacity:.5', onclick: utils.event(vnode, this.toggleCollapsed)},
                                 [
                                     ' -- ',
                                     vnode.attrs.path ? vnode.attrs.path : '$'
@@ -361,37 +364,6 @@ class RenderJson {
             ) : ('' + JSON.stringify(vnode.attrs.obj)), utils.propList(vnode.attrs.obj).length ? null : m('span', {style: 'opacity:.5'}, [' -- ', vnode.attrs.path ? vnode.attrs.path : '$']),
             utils.propList(vnode.attrs.obj).length ? '}' : null, ',', m('br')
         ]);
-    }
-}
-
-var event = (vnode, fn) => {
-    return (ev) => {
-        fn(vnode, ev);
-        m.redraw();
-    };
-};
-
-class Alert {
-    oncreate(vnode) {
-        this.timeout = vnode.attrs.timeout || -1;
-        if (this.timeout > 0) {
-            setTimeout(event(vnode, this.remove), this.timeout);
-        }
-    }
-    remove(vnode) {
-        console.log('removal ', alerts);
-        alerts.splice(alerts.indexOf(vnode.attrs.alert), 1);
-    }
-    view(vnode) {
-        return m(".alert.alert-warning.alert-dismissible.fade.show[role='alert']", {key: vnode.attrs.alert.key},
-                [
-                    m("strong", vnode.attrs.alert.title),
-                    [vnode.attrs.alert.alert, vnode.attrs.alert.key],
-                    m("button.close[aria-label='Close'][data-dismiss='-alert'][type='button']",
-                            {onclick: event(vnode, this.remove)},
-                            m("span[aria-hidden='true']", m.trust("&times;")))
-                ]
-                );
     }
 }
 
@@ -509,7 +481,7 @@ class TemplateBuilder {
             m('.col-md-6', m('textarea#to-area', {style: "width:100%", cols: 20})),
             m('.col-md-12', [
                 m('input[type=checkbox]', {value: vnode.state.virtual, onchange: m.withAttr('value', (v) => vnode.state.virtual = Boolean(v), vnode)}, 'virtual'),
-                m('button.btn.btn-default', {onclick: event(vnode, this.convert)}, 'Convert')
+                m('button.btn.btn-default', {onclick: utils.event(vnode, this.convert)}, 'Convert')
             ])
         ])
     }
@@ -541,7 +513,7 @@ class Adder {
     }
     view(vnode) {
         return m("button.close[aria-label='Close'][data-dismiss='-alert'][type='button']",
-                {onclick: event(vnode, this.add)},
+                {onclick: utils.event(vnode, this.add)},
                 m("span[aria-hidden='true']", m.trust("&plus;")));
     }
 }
@@ -557,9 +529,9 @@ class Editbar {
         vnode.attrs.tc(ev.target.value);
     }
     view(vnode) {
-        return m('', 'Editbar', m('select', {onchange: event(vnode, this.applyClassToParent)}, [
+        return m('', 'Editbar', m('select', {onchange: utils.event(vnode, this.applyClassToParent)}, [
             m('option', 'alert alert-warning'),
-            m('option', 'alert alert-success')]), m('select', {onchange: event(vnode, this.applyTagToParent)}, [
+            m('option', 'alert alert-success')]), m('select', {onchange: utils.event(vnode, this.applyTagToParent)}, [
             vnode.state.tags.map(t => m('option', t))
         ]));
     }
@@ -569,7 +541,7 @@ class VariableComponent {
     oninit(vnode) {
         vnode.state.tag = '';
         vnode.state.class = 'alert alert-warning';
-//        setInterval(event(vnode, v => console.log(vnode.state.class)), 1000);
+//        setInterval(utils.event(vnode, v => console.log(vnode.state.class)), 1000);
     }
     applyClass(vnode, ev) {
         vnode.state.class = ev;
@@ -585,25 +557,18 @@ class VariableComponent {
         return  [
             Context.editMode ? m(Editbar, {
                 t: vnode.state.tag,
-                tc: event(vnode, this.applyTag),
+                tc: utils.event(vnode, this.applyTag),
                 c: vnode.state.class,
-                cc: event(vnode, this.applyClass)
+                cc: utils.event(vnode, this.applyClass)
             }) : null,
             m(vnode.state.tag, {class: vnode.state.class}, vnode.children),
-            Context.editMode ? m(Adder, {cb: event(vnode, this.addChild)}) : null];
-    }
-}
-
-var alerts = [{text: 'hello', title: 'HoneyPot', key: 0}];
-class AlertList {
-    view(vnode) {
-        return m('', [m('.badge.badge-secondary', alerts.length), alerts.map((al, idx) => m(Alert, {alert: al, timeout: 3000}))]);
+            Context.editMode ? m(Adder, {cb: utils.event(vnode, this.addChild)}) : null];
     }
 }
 
 class PageLayout {
     view(vnode) {
-        return [m(Navbar), m('.container', m(AlertList), m('article', m(Router)))];
+        return [m(Navbar), m('.container', m(Alert.listcomponent), m('article', m(Router)))];
     }
 }
 
