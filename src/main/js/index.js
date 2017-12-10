@@ -1,17 +1,14 @@
 import m from 'mithril';
 import jsonPath from './jsonpath';
 import { applyOperation } from 'fast-json-patch';
-
 import render from './rendering';
-
 import templateBuilder from './htmltohyperscript';
-
 import utils from './utils';
-
 import Alert from './alert';
 
 let Context = {
-    editMode: false
+    editMode: false,
+    online: false
 };
 
 let store = {
@@ -235,16 +232,65 @@ let applyValuesToPaths = (obj, paths, vals) => {
     }
 };
 
+var safe = (fn) => {
+    return fn || (() => {
+    });
+};
+
+class DataStore {
+    constructor(collectionName) {
+        this.url = "/resource/" + collectionName + "/";
+        this.collection = localStorage.getItem(collectionName);
+        this.fetchObjects("/resource/" + collectionName)
+    }
+    fetchObjects(fn) {
+        m.request({
+            url: this.url,
+            method: 'GET'
+        }).then(result => {
+            this.collection = result;
+            safe(fn)(result);
+        });
+    }
+    delete(id, fn) {
+        m.request({
+            url: this.url + id,
+            method: 'DELETE'
+        }).then(result => {
+            console.log('deletion result', result);
+            safe(fn)(result);
+        });
+    }
+    save(object, fn) {
+        m.request({
+            url: this.url,
+            method: 'POST',
+            data: object
+        }).then(result => {
+            console.log('deletion result', result);
+            safe(fn)(result);
+        });
+    }
+    getObject(id, fn) {
+        m.request({
+            url: this.url + '/' + id
+        }).then(r => {
+            safe(fn)(r);
+        });
+    }
+}
+
+var templateStore = new DataStore('template');
 
 
-var resultTypes = ["VALUE", "PATH", "LOCATION"];
 
 class InteractiveJsonPath {
     oninit(vnode) {
         vnode.state.path = '$';
         vnode.state.dataset = 'worldpopulation';
         vnode.state.resultType = 'VALUE';
-        vnode.state.computeOutput(vnode)
+        vnode.state.computeOutput(vnode);
+        vnode.state.resultTypes = ["VALUE", "PATH", "LOCATION"];
     }
     changePath(vnode, ev) {
         vnode.state.path = ev.target.value;
@@ -266,7 +312,7 @@ class InteractiveJsonPath {
     view(vnode) {
         return m('.row', [
             m('.col-6', m('select', {onchange: utils.event(vnode, this.changeDataset)}, datasets.map(d => m('option', d.key)))),
-            m('.col-6', m('select', {onchange: utils.event(vnode, this.changeResultType)}, resultTypes.map(d => m('option', d + '')))),
+            m('.col-6', m('select', {onchange: utils.event(vnode, this.changeResultType)}, vnode.state.resultTypes.map(d => m('option', d + '')))),
             m('.col-md-6', m('input', {oninput: utils.event(vnode, this.changePath)})),
             m('.col-md-6', m('pre', vnode.state.output))
         ]);
@@ -461,10 +507,7 @@ class TemplateBuilder {
         vnode.state.virtual = false;
     }
     convert(vnode, ev) {
-        console.log('#########', vnode);
-        console.log(templateBuilder);
         let source = document.getElementById('from-area').value;
-        console.log(source)
         let input = vnode.state.virtual ? {source, virtual: vnode.state.virtual} : {source};
         let result = templateBuilder(input);
         document.getElementById('to-area').value = vnode.state.virtual ? JSON.stringify(result) : result;
