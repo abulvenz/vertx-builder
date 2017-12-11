@@ -232,16 +232,12 @@ let applyValuesToPaths = (obj, paths, vals) => {
     }
 };
 
-var safe = (fn) => {
-    return fn || (() => {
-    });
-};
 
 class DataStore {
     constructor(collectionName) {
         this.url = "/resource/" + collectionName + "/";
         this.collection = localStorage.getItem(collectionName);
-        this.fetchObjects("/resource/" + collectionName)
+        this.fetchObjects();
     }
     fetchObjects(fn) {
         m.request({
@@ -249,7 +245,7 @@ class DataStore {
             method: 'GET'
         }).then(result => {
             this.collection = result;
-            safe(fn)(result);
+            utils.safe(fn)(result);
         });
     }
     delete(id, fn) {
@@ -257,8 +253,7 @@ class DataStore {
             url: this.url + id,
             method: 'DELETE'
         }).then(result => {
-            console.log('deletion result', result);
-            safe(fn)(result);
+            utils.safe(fn)(result);
         });
     }
     save(object, fn) {
@@ -268,21 +263,23 @@ class DataStore {
             data: object
         }).then(result => {
             console.log('deletion result', result);
-            safe(fn)(result);
+            utils.safe(fn)(result);
         });
     }
     getObject(id, fn) {
         m.request({
             url: this.url + '/' + id
         }).then(r => {
-            safe(fn)(r);
+            console.log('get', id)
+            utils.safe(fn)(r);
         });
     }
 }
 
+console.log('before')
 var templateStore = new DataStore('template');
 
-
+console.log('after')
 
 class InteractiveJsonPath {
     oninit(vnode) {
@@ -430,27 +427,13 @@ class Navbar {
     view(vnode) {
         return m("nav.navbar.navbar-expand-lg.navbar-light.bg-light",
                 [
-                    m(NavbarBrand, 'Navbar'),
+                    //   m(NavbarBrand, 'Navbar'),
                     m(NavbarToggleButton),
                     m(".collapse.navbar-collapse[id='navbarSupportedContent']",
                             [
                                 m("ul.navbar-nav.mr-auto",
                                         [
-                                            m("li.nav-item.active",
-                                                    m("a.nav-link[href='#']",
-                                                            [
-                                                                "Home",
-                                                                m("span.sr-only",
-                                                                        "(current)"
-                                                                        )
-                                                            ]
-                                                            )
-                                                    ),
-                                            m("li.nav-item",
-                                                    m("a.nav-link[href='#']",
-                                                            "Link"
-                                                            )
-                                                    ),
+                                            vnode.attrs.links.map(l => m("li.nav-item", m("a.nav-link", {href: '#' + l.link}, l.text))),
                                             m("li.nav-item.dropdown",
                                                     [
                                                         m("a.nav-link.dropdown-toggle[aria-expanded='false'][aria-haspopup='true'][data-toggle='dropdown'][href='#'][id='navbarDropdown'][role='button']",
@@ -475,11 +458,7 @@ class Navbar {
                                                                 )
                                                     ]
                                                     ),
-                                            m("li.nav-item",
-                                                    m("a.nav-link.disabled[href='#']",
-                                                            "Disabled"
-                                                            )
-                                                    ),
+//                                            m("li.nav-item",m("a.nav-link.disabled[href='#']", "Disabled" ) ),
                                             m("button.btn.btn-primary[aria-pressed='false'][autocomplete='off'][data-toggle='button'][type='button']", {onclick: ev => {
                                                     Context.editMode = !Context.editMode;
                                                 }},
@@ -490,7 +469,7 @@ class Navbar {
                                 m("form.form-inline.my-2.my-lg-0",
                                         [
                                             m("input.form-control.mr-sm-2[aria-label='Search'][placeholder='Search'][type='search']"),
-                                            m("button.btn.btn-outline-success.my-2.my-sm-0[type='submit']", {onclick: ev => alerts.push({text: 'hello', title: 'HoneyPot', key: Math.random()})},
+                                            m("button.btn.btn-outline-success.my-2.my-sm-0[type='submit']", {onclick: ev => Alert.messages.push({text: 'hello', title: 'HoneyPot', key: Math.random()})},
                                                     "Search"
                                                     )
                                         ]
@@ -530,20 +509,41 @@ class TemplateBuilder {
     }
 }
 
+
+var links = [
+    {
+        text: 'Rendering',
+        link: '/',
+        component: RenderInRow
+    }, {
+        text: 'Render in Row',
+        link: '/title/:id',
+        component: RenderInRow
+    }, {
+        text: 'Rendered template',
+        link: '/render',
+        component: {
+            render: (vnode) => {
+                return [m(Wrapper, {obj: cardTemplate}), m(RenderJson, {obj: renderedTemplate})];
+            }
+        }
+    }, {
+        text: 'JsonPath',
+        link: '/jsonpath',
+        component: InteractiveJsonPath
+    }, {
+        text: 'Template Generator',
+        link: '/templatebuilder',
+        component: TemplateBuilder
+    }
+];
+
+console.log('toMap', utils.toMap(links, 'link', 'component'))
+
 m.route.prefix('#');
 class Router {
     oncreate(vnode) {
-        m.route(vnode.dom, '/', {
-            '/': RenderInRow,
-            '/title/:id': RenderInRow,
-            '/render': {
-                render: (vnode) => {
-                    return [m(Wrapper, {obj: cardTemplate}), m(RenderJson, {obj: renderedTemplate})];
-                }
-            },
-            '/jsonpath': InteractiveJsonPath,
-            '/templatebuilder': TemplateBuilder
-        });
+        m.route(vnode.dom, '/', utils.toMap(links, 'link', 'component'));
     }
     view(vnode) {
         return m('');
@@ -611,7 +611,7 @@ class VariableComponent {
 
 class PageLayout {
     view(vnode) {
-        return [m(Navbar), m('.container', m(Alert.listcomponent), m('article', m(Router)))];
+        return [m(Navbar, {links: links}), m('.container', m(Alert.listcomponent), m('article', m(Router)))];
     }
 }
 
