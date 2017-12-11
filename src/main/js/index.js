@@ -237,16 +237,19 @@ class DataStore {
     constructor(collectionName) {
         this.url = "/resource/" + collectionName + "/";
         this.collectionName = collectionName;
-        try {
-            this.collection = JSON.parse(localStorage.getItem(collectionName)) || [];
-        } catch (e) {
-            console.log('ERROR in storage');
-            this.collection = [];
-        }
+        this.readLocal();
         this.fetchObjects();
     }
     getList() {
         return this.collection;
+    }
+    readLocal() {
+        try {
+            this.collection = JSON.parse(localStorage.getItem(collectionName)) || [];
+        } catch (e) {
+            console.log('ERROR in storage. Resetting local storage.');
+            this.collection = [];
+        }
     }
     writeLocal() {
         localStorage.setItem(this.collectionName, JSON.stringify(this.collection));
@@ -295,18 +298,34 @@ class DataStore {
 
 console.log('before')
 var templateStore = new DataStore('template');
+var fusionStore = new DataStore('fusion');
+var dataStore = new DataStore('data');
+
 
 templateStore.fetchObjects(result => {
     console.log('done: ', result)
 });
 
 console.log('lost list', templateStore.getList())
-var id = templateStore.getList()[0]._id
+//var id = templateStore.getList()[0]._id
 
 //templateStore.delete(id, (r) => console.log(r))
 templateStore.save(cardTemplate);
 
 console.log('after')
+
+class FusionSelector {
+    view(vnode) {
+        return [
+            m('h1', 'FusionSelector'),
+            m('.row', [
+                m('.col-md-4', [m('.label.label-default', 'Template'), m('select', templateStore.getList().map(c => m('option', c._id)))]),
+                m('.col-md-4', [m('.label.label-default', 'Data'), m('select', dataStore.getList().map(c => m('option', c._id)))]),
+                m('.col-md-4', [m('.label.label-default', 'Template'), m('select', templateStore.getList().map(c => m('option', c._id)))])
+            ])
+        ];
+    }
+}
 
 class InteractiveJsonPath {
     oninit(vnode) {
@@ -562,6 +581,11 @@ var links = [
         text: 'Template Generator',
         link: '/templatebuilder',
         component: TemplateBuilder
+    },
+    {
+        text: 'Fusions',
+        link: '/fusion',
+        component: FusionSelector
     }
 ];
 

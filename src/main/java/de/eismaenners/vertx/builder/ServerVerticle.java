@@ -5,14 +5,16 @@
  */
 package de.eismaenners.vertx.builder;
 
+import static de.eismaenners.vertx.builder.StreamUtils.toJsonArray;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.StaticHandler;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -31,64 +33,105 @@ public class ServerVerticle extends AbstractVerticle {
 
         System.out.println("WEBROOT " + System.getProperty("user.dir"));
 
-        router.get("/resource/:collection/").handler(ctx -> {
-            JsonObject query = new JsonObject();
-            mongoClient.find(ctx.request().getParam("collection"), query, result -> {
-                jsonResponse(ctx)
-                        .setStatusCode(200)
-                        .end(result.result().stream().collect(JsonArray::new, JsonArray::add, JsonArray::addAll).encode());
+        List<String> asList = Arrays.asList("Hello", "Jona");
+        System.out.println("json: " + asList.stream().collect(toJsonArray()).encode());
+
+        router.get("/resource/all").handler(ctx -> {
+            mongoClient.getCollections(retrieval -> {
+                if (retrieval.succeeded()) {
+                    endWithJson(ctx,
+                            200,
+                            "All collections.",
+                            retrieval.result().stream().collect(toJsonArray()).encode()
+                    );
+                } else {
+                    end(ctx, 500, "Request failed");
+                }
             });
         });
+
+        router.get("/resource/:collection/").handler(ctx -> {
+            JsonObject query = new JsonObject();
+            final String paramCollection = ctx.request().getParam("collection");
+            mongoClient.find(paramCollection, query, result -> {
+                endWithJson(ctx,
+                        200,
+                        "Collection " + paramCollection + " listed.",
+                        result.result().stream().collect(toJsonArray()).encode()
+                );
+            });
+        });
+
         router.get("/resource/:collection/:id").handler(ctx -> {
             JsonObject query = new JsonObject();
-            query.put("_id", ctx.request().getParam("id"));
+            final String paramID = ctx.request().getParam("id");
+            final String paramCollection = ctx.request().getParam("collection");
+            query.put("_id", paramID);
             JsonObject projection = new JsonObject();
-            mongoClient.findOne(ctx.request().getParam("collection"), query, projection, result -> {
+            mongoClient.findOne(paramCollection, query, projection, result -> {
                 if (!result.succeeded() || result.result() == null) {
-                    ctx.response()
-                            .setStatusCode(404)
-                            .setStatusMessage("Object " + ctx.request().getParam("id") + " not found in collection " + ctx.request().getParam("collection"))
-                            .end();
+                    end(ctx, 404, "Object " + paramID + " not found in collection " + paramCollection);
                 } else {
-                    jsonResponse(ctx)
-                            .setStatusCode(200)
-                            .end(result.result().encode());
+                    endWithJson(ctx,
+                            200,
+                            "Object loaded",
+                            result.result().encode()
+                    );
                 }
             });
         });
 
         router.post("/resource/:collection/").handler(ctx -> {
+            final String paramCollection = ctx.request().getParam("collection");
+
             ctx.request().bodyHandler(buffer -> {
                 JsonObject object = buffer.toJsonObject();
-                mongoClient.save(ctx.request().getParam("collection"), object, result -> {
+                mongoClient.save(paramCollection, object, result -> {
                     if (result.succeeded()) {
-                        jsonResponse(ctx)
-                                .setStatusCode(200)
-                                .setStatusMessage("Object " + result.result() + " saved in collection " + ctx.request().getParam("collection"))
-                                .end(new JsonObject().put("id", result.result()).encode());
+                        endWithJson(ctx,
+                                200,
+                                "Object " + result.result() + " saved in collection " + paramCollection,
+                                new JsonObject().put("id", result.result()).encode()
+                        );
                     } else {
-                        ctx.response()
-                                .setStatusCode(400)
-                                .setStatusMessage(result.cause().toString())
-                                .end();
+                        end(ctx, 400, result.cause().toString());
+                    }
+                });
+            });
+        });
+
+        router.post("/resource/:collection/search").handler(ctx -> {
+            final String paramCollection = ctx.request().getParam("collection");
+
+            ctx.request().bodyHandler(buffer -> {
+                JsonObject query = buffer.toJsonObject();
+                mongoClient.find(paramCollection, query, result -> {
+                    if (result.succeeded()) {
+                        endWithJson(ctx,
+                                200,
+                                "Query to " + paramCollection + " returned " + result.result().size() + " results.",
+                                result.result().stream().collect(toJsonArray()).encode()
+                        );
+                    } else {
+                        end(ctx, 400, result.cause().toString());
                     }
                 });
             });
         });
 
         router.delete("/resource/:collection/:id").handler(ctx -> {
-            JsonObject object = new JsonObject().put("_id", ctx.request().getParam("id"));
-            mongoClient.removeDocument(ctx.request().getParam("collection"), object, result -> {
+            final String paramID = ctx.request().getParam("id");
+            final String paramCollection = ctx.request().getParam("collection");
+            JsonObject object = new JsonObject().put("_id", paramID);
+            mongoClient.removeDocument(paramCollection, object, result -> {
                 if (result.succeeded()) {
-                    jsonResponse(ctx)
-                            .setStatusCode(200)
-                            .setStatusMessage("Object " + result.result() + " saved in collection " + ctx.request().getParam("collection"))
-                            .end(new JsonObject().put("removedCount", result.result().getRemovedCount() + "").encode());
+                    endWithJson(ctx,
+                            200,
+                            "Object " + result.result() + " saved in collection " + paramCollection,
+                            new JsonObject().put("removedCount", result.result().getRemovedCount() + "").encode()
+                    );
                 } else {
-                    ctx.response()
-                            .setStatusCode(400)
-                            .setStatusMessage(result.cause().toString())
-                            .end();
+                    end(ctx, 400, result.cause().toString());
                 }
             });
         });
@@ -102,6 +145,32 @@ public class ServerVerticle extends AbstractVerticle {
                 .failureHandler(ctx -> ctx.reroute("/"));
 
         vertx.createHttpServer().requestHandler(router::accept).listen(8888);
+    }
+
+    public void notFound(RoutingContext ctx) {
+        end(ctx, 404, "Not found");
+    }
+
+    public void badRequest(RoutingContext ctx) {
+        end(ctx, 400, "Bad request");
+    }
+
+    public void serverError(RoutingContext ctx) {
+        end(ctx, 500, "Server error");
+    }
+
+    public void endWithJson(RoutingContext ctx, int code, String message, String stringifiedJson) {
+        jsonResponse(ctx)
+                .setStatusCode(code)
+                .setStatusMessage(message)
+                .end(stringifiedJson);
+    }
+
+    public void end(RoutingContext ctx, int code, String message) {
+        ctx.response()
+                .setStatusCode(code)
+                .setStatusMessage(message)
+                .end();
     }
 
     public HttpServerResponse jsonResponse(RoutingContext ctx) {
