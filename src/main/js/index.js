@@ -236,8 +236,20 @@ let applyValuesToPaths = (obj, paths, vals) => {
 class DataStore {
     constructor(collectionName) {
         this.url = "/resource/" + collectionName + "/";
-        this.collection = localStorage.getItem(collectionName);
+        this.collectionName = collectionName;
+        try {
+            this.collection = JSON.parse(localStorage.getItem(collectionName)) || [];
+        } catch (e) {
+            console.log('ERROR in storage');
+            this.collection = [];
+        }
         this.fetchObjects();
+    }
+    getList() {
+        return this.collection;
+    }
+    writeLocal() {
+        localStorage.setItem(this.collectionName, JSON.stringify(this.collection));
     }
     fetchObjects(fn) {
         m.request({
@@ -245,24 +257,29 @@ class DataStore {
             method: 'GET'
         }).then(result => {
             this.collection = result;
+            this.writeLocal();
             utils.safe(fn)(result);
         });
     }
     delete(id, fn) {
+        console.log('delete', id);
         m.request({
             url: this.url + id,
             method: 'DELETE'
         }).then(result => {
+            console.log('delete result', result);
+            this.writeLocal();
             utils.safe(fn)(result);
         });
     }
     save(object, fn) {
+        this.collection.push(object);
         m.request({
             url: this.url,
             method: 'POST',
             data: object
         }).then(result => {
-            console.log('deletion result', result);
+            console.log('save result', result);
             utils.safe(fn)(result);
         });
     }
@@ -278,6 +295,16 @@ class DataStore {
 
 console.log('before')
 var templateStore = new DataStore('template');
+
+templateStore.fetchObjects(result => {
+    console.log('done: ', result)
+});
+
+console.log('lost list', templateStore.getList())
+var id = templateStore.getList()[0]._id
+
+//templateStore.delete(id, (r) => console.log(r))
+templateStore.save(cardTemplate);
 
 console.log('after')
 
