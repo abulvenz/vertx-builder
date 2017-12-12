@@ -144,7 +144,9 @@ public class ServerVerticle extends AbstractVerticle {
                         .setIndexPage("index.html"))
                 .failureHandler(ctx -> ctx.reroute("/"));
 
-        vertx.createHttpServer().requestHandler(router::accept).listen(8888);
+        vertx.createHttpServer()
+                .requestHandler(router::accept)
+                .listen(8888);
     }
 
     public void notFound(RoutingContext ctx) {

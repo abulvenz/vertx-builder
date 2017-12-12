@@ -5,405 +5,150 @@ import render from './rendering';
 import templateBuilder from './htmltohyperscript';
 import utils from './utils';
 import Alert from './alert';
+import RenderJson from './renderjson';
+import DataStore from './datastore';
+import InteractiveJsonPath from './interactivejsonpath';
+
+/** Later use https://github.com/j2css/j2c for css-json */
+
 
 let Context = {
     editMode: false,
     online: false
 };
 
-let store = {
-    "store": {
-        "book": [
-            {"category": "reference",
-                "author": "Nigel Rees",
-                "title": "Sayings of the Century",
-                "price": 8.95,
-                "flag": "http://www.androidbegin.com/tutorial/flag/china.png"
-            },
-            {"category": "fiction",
-                "author": "Evelyn Waugh",
-                "title": "Sword of Honour",
-                "price": 12.99,
-                "flag": "http://www.androidbegin.com/tutorial/flag/india.png"
-            },
-            {"category": "fiction",
-                "author": "Herman Melville",
-                "title": "Moby Dick",
-                "isbn": "0-553-21311-3",
-                "price": 8.99,
-                "flag": "http://www.androidbegin.com/tutorial/flag/unitedstates.png"
-            },
-            {"category": "fiction",
-                "author": "J. R. R. Tolkien",
-                "title": "The Lord of the Rings",
-                "isbn": "0-395-19395-8",
-                "price": 22.99,
-                "flag": "http://www.androidbegin.com/tutorial/flag/japan.png"
-            }
-        ],
-        "bicycle": {
-            "color": "red",
-            "price": 19.95
-        }
-    }
-};
-
-let data = {// JSON Object
-    "worldpopulation": // JSON Array Name
-            [// JSON Array
-                {// JSON Object
-                    "rank": 1, "country": "China",
-                    "population": "1,354,040,000",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/china.png"
-                },
-                {// JSON Object
-                    "rank": 2, "country": "India",
-                    "population": "1,210,193,422",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/india.png"
-                },
-                {// JSON Object
-                    "rank": 3, "country": "United States",
-                    "population": "315,761,000",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/unitedstates.png"
-                },
-                {// JSON Object
-                    "rank": 4, "country": "Indonesia",
-                    "population": "237,641,326",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/indonesia.png"
-                },
-                {// JSON Object
-                    "rank": 5, "country": "Brazil",
-                    "population": "193,946,886",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/brazil.png"
-                },
-                {// JSON Object
-                    "rank": 6, "country": "Pakistan",
-                    "population": "182,912,000",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/pakistan.png"
-                },
-                {// JSON Object
-                    "rank": 7, "country": "Nigeria",
-                    "population": "170,901,000",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/nigeria.png"
-                },
-                {// JSON Object
-                    "rank": 8, "country": "Bangladesh",
-                    "population": "152,518,015",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/bangladesh.png"
-                },
-                {// JSON Object
-                    "rank": 9, "country": "Russia",
-                    "population": "143,369,806",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/russia.png"
-                },
-                {// JSON Object
-                    "rank": 10, "country": "Japan",
-                    "population": "127,360,000",
-                    "flag": "http://www.androidbegin.com/tutorial/flag/japan.png"
-                }
-            ] // JSON Array
-};
-let booktemplate_old = {"tag": "h1", "attrs": {"class": "large-font"}, "text": "@.title"};
-let booktemplate = {"tag": "div", "attrs": {"class": "card"}, "children": [{"tag": "div", "attrs": {"class": "card-header"}, "children": ["$.title"]}]};
-
-let cardTemplate = {"tag": "div", "attrs": {"class": "col-md-4"}, "children": [{
-            "tag": "div",
-            "attrs": {
-                "style": {
-                    //         "width": "10rem"
-                },
-                "className": "card card-primary",
-            },
-            "children": [
-                {
-                    "tag": "img",
-                    "attrs": {
-                        "alt": "Card image cap",
-                        "src": "$.flag",
-                        "className": "card-img-top"
-                    },
-                    "children": [
-
-                    ],
-                    "skip": false
-                },
-                {
-                    "tag": "div",
-                    "attrs": {
-                        "className": "card-body"
-                    },
-                    "children": [
-                        {
-                            "tag": "h4",
-                            "attrs": {
-                                "className": "card-title"
-                            },
-                            "text": "$.country",
-                            "skip": false
-                        },
-                        {
-                            "tag": "p",
-                            "attrs": {
-                                "className": "card-text"
-                            },
-                            "children": [
-                                "Population: ",
-                                {
-                                    tag: 'span',
-                                    "text": "$.population",
-                                    attrs: {
-                                        className: ''
-                                    }
-                                }
-                            ],
-                            "skip": false
-                        },
-                        {
-                            "tag": "a",
-                            "attrs": {
-                                "href": "#",
-                                "className": "btn btn-primary"
-                            },
-                            "text": "Make peace with them all",
-                            "skip": false
-                        }
-                    ],
-                    "skip": false
-                }
-            ],
-            "skip": false
-        }]};
-
-var datasets = [
-    {
-        key: 'worldpopulation',
-        data: data,
-    },
-    {
-        key: 'store',
-        data: store
-    },
-    {
-        key: 'template for card',
-        data: cardTemplate
-    }
-];
-
-var renderedTemplate = render({template: cardTemplate, data: data, path: '$..worldpopulation[:]'});
-
-
-datasets.push({key: 'rederedStuff', data: renderedTemplate});
-
-
-var findData = (key) => {
-    for (var i = 0; i < datasets.length; i++) {
-        if (key === datasets[i].key)
-            return datasets[i].data;
-    }
-};
-
-let applyValuesToPaths = (obj, paths, vals) => {
-    let applyValueToPath = (obj, path, val) => {
-        for (var pidx = 0; pidx < path.length - 1; pidx++)
-            obj = obj[path[pidx]];
-        obj[path[path.length - 1]] = val;
-    };
-
-    if (utils.isString(paths)) {
-        paths = jsonPath(obj, paths, {resultType: 'LOCATION'})
-    }
-
-    if (!paths.length && !vals.length) {
-// Both contain one value.
-        console.log('This cannot happen, because paths should always be an array.');
-    } else if (paths.length && vals.length && (paths.length === vals.length)) {
-// Both contain the same number of values.
-        paths.forEach((path, idx) => {
-            applyValueToPath(obj, path, vals[idx]);
-        });
-        console.log('Both contain the same number of values.');
-    } else if (paths.length && (!vals.length || vals.length === 1 || typeof vals == 'string')) {
-        console.log('Multiple paths, but only one value.');
-        paths.forEach((path) => {
-            applyValueToPath(obj, path, vals);
-        });
-    } else {
-        console.log('ERROR while applying', obj, paths, vals);
-    }
-};
-
-
-class DataStore {
-    constructor(collectionName) {
-        this.url = "/resource/" + collectionName + "/";
-        this.collectionName = collectionName;
-        this.readLocal();
-        this.fetchObjects();
-    }
-    getList() {
-        return this.collection;
-    }
-    readLocal() {
-        try {
-            this.collection = JSON.parse(localStorage.getItem(collectionName)) || [];
-        } catch (e) {
-            console.log('ERROR in storage. Resetting local storage.');
-            this.collection = [];
-        }
-    }
-    writeLocal() {
-        localStorage.setItem(this.collectionName, JSON.stringify(this.collection));
-    }
-    fetchObjects(fn) {
-        m.request({
-            url: this.url,
-            method: 'GET'
-        }).then(result => {
-            this.collection = result;
-            this.writeLocal();
-            utils.safe(fn)(result);
-        });
-    }
-    delete(id, fn) {
-        console.log('delete', id);
-        m.request({
-            url: this.url + id,
-            method: 'DELETE'
-        }).then(result => {
-            console.log('delete result', result);
-            this.writeLocal();
-            utils.safe(fn)(result);
-        });
-    }
-    save(object, fn) {
-        this.collection.push(object);
-        m.request({
-            url: this.url,
-            method: 'POST',
-            data: object
-        }).then(result => {
-            console.log('save result', result);
-            utils.safe(fn)(result);
-        });
-    }
-    getObject(id, fn) {
-        m.request({
-            url: this.url + '/' + id
-        }).then(r => {
-            console.log('get', id)
-            utils.safe(fn)(r);
-        });
-    }
-}
-
 console.log('before')
 var templateStore = new DataStore('template');
 var fusionStore = new DataStore('fusion');
 var dataStore = new DataStore('data');
-
-
 templateStore.fetchObjects(result => {
     console.log('done: ', result)
 });
-
 console.log('lost list', templateStore.getList())
 //var id = templateStore.getList()[0]._id
 
-//templateStore.delete(id, (r) => console.log(r))
-templateStore.save(cardTemplate);
 
+//templateStore.delete(id, (r) => console.log(r))
+//templateStore.save(cardTemplate);
+//templateStore.save(booktemplate);
 console.log('after')
 
-class FusionSelector {
+class CrudView {
+    oninit(vnode) {
+        vnode.state.resources = [];
+        m.request({
+            url: '/resource/all'
+        }).then(result => {
+            vnode.state.resources = result;
+            m.redraw();
+        });
+    }
+    selectCollection(vnode, ev) {
+        vnode.state.datastore = new DataStore(ev.target.value);
+        vnode.state.datastore.fetchObjects(r => {
+            if (vnode.state.datastore.getList().length > 0) {
+                node.state.selectedObject = vnode.state.datastore.getList()[0];
+            }
+        });
+    }
+    selectObject(vnode, ev) {
+        vnode.state.selectedObject =
+                vnode.state.datastore.getLocal(ev.target.value);
+        m.redraw();
+        console.log('selectedObject', vnode.state.selectedObject)
+    }
     view(vnode) {
         return [
-            m('h1', 'FusionSelector'),
-            m('.row', [
-                m('.col-md-4', [m('.label.label-default', 'Template'), m('select', templateStore.getList().map(c => m('option', c._id)))]),
-                m('.col-md-4', [m('.label.label-default', 'Data'), m('select', dataStore.getList().map(c => m('option', c._id)))]),
-                m('.col-md-4', [m('.label.label-default', 'Template'), m('select', templateStore.getList().map(c => m('option', c._id)))])
-            ])
+            m('h1', 'CrudView'),
+            m('select', {
+                onchange: utils.event(vnode, this.selectCollection)
+            }, vnode.state.resources.map(o => m('option', o))),
+            vnode.state.datastore ? m('select', {
+                onchange: utils.event(vnode, this.selectObject)
+            }, vnode.state.datastore.getList().map(o => m('option', o._id))) : null,
+            m('textarea', JSON.stringify(vnode.state.selectedObject, undefined, 2)),
+            m(RenderJson, {obj: vnode.state.selectedObject})
         ];
     }
 }
 
-class InteractiveJsonPath {
-    oninit(vnode) {
-        vnode.state.path = '$';
-        vnode.state.dataset = 'worldpopulation';
-        vnode.state.resultType = 'VALUE';
-        vnode.state.computeOutput(vnode);
-        vnode.state.resultTypes = ["VALUE", "PATH", "LOCATION"];
-    }
-    changePath(vnode, ev) {
-        vnode.state.path = ev.target.value;
-        vnode.state.computeOutput(vnode)
-    }
-    computeOutput(vnode) {
-        let tOut = JSON.stringify(jsonPath(findData(vnode.state.dataset), vnode.state.path, {resultType: vnode.state.resultType}), undefined, 2);
-        if (tOut !== 'false')
-            vnode.state.output = tOut;
-    }
-    changeDataset(vnode, ev) {
-        vnode.state.dataset = ev.target.value;
-        vnode.state.computeOutput(vnode)
-    }
-    changeResultType(vnode, ev) {
-        vnode.state.resultType = ev.target.value;
-        vnode.state.computeOutput(vnode);
-    }
-    view(vnode) {
-        return m('.row', [
-            m('.col-6', m('select', {onchange: utils.event(vnode, this.changeDataset)}, datasets.map(d => m('option', d.key)))),
-            m('.col-6', m('select', {onchange: utils.event(vnode, this.changeResultType)}, vnode.state.resultTypes.map(d => m('option', d + '')))),
-            m('.col-md-6', m('input', {oninput: utils.event(vnode, this.changePath)})),
-            m('.col-md-6', m('pre', vnode.state.output))
-        ]);
-    }
-}
-
-let template = {
-    templateID: 'page',
-    class: 'container',
-    children: [
-        {
-            class: 'row',
-            children: [
-                {
-                    class: 'col-md-6',
-                    children: [
-                        {
-                            class: ''
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-};
-
-class RenderInRow {
+/* Data object */
+class Fusion {
     constructor() {
-        this.message = 'HELLO ES6';
+        console.log('CREATING FUSION')
+        this.path = '$';
+        this.templateID = null;
+        this.dataID = null;
     }
-    view(vnode) {
-        return [m('h1', [vnode.attrs.id || this.message]), m(VariableComponent, '---'), m('.row', renderedTemplate.map(c => m(Wrapper, {obj: c})))];
+    setPath(path) {
+        console.log('SET PATH', this);
+        this.path = path;
+    }
+    getPath() {
+        return this.path;
+    }
+    setTemplateID(id) {
+        console.log('SET TEMPLATE', this);
+        this.templateID = id;
+    }
+    getTemplateID() {
+        return this.templateID;
+    }
+    setDataID(id) {
+        console.log('SET DATA', this);
+        this.dataID = id;
+    }
+    getDataID() {
+        return this.dataID;
     }
 }
 
-class Wrapper_ {
+let f = new Fusion();
+
+console.log('f', JSON.stringify(f));
+console.log('Fusion', Fusion);
+
+class FusionSelector {
+    constructor(vnode) {
+        this.fusion = vnode.attrs.fusion || new Fusion();
+    }
     view(vnode) {
-        return !vnode.attrs.obj ? null : utils.isArray(vnode.attrs.obj) ?
-                m('', vnode.attrs.obj.map(c => m(Wrapper, {obj: c}))) :
-                m(vnode.attrs.obj.tag,
-                        vnode.attrs.obj.attrs,
-                        vnode.attrs.obj.children ?
-                        vnode.attrs.obj.children.map(c => {
-                            return utils.isString(c) ? c : m(Wrapper, {obj: c})
-                        }) :
-                        vnode.attrs.obj.text);
+        return [
+            m('h1', 'FusionSelector'),
+            m('.row', [
+                m('.col-md-4', [
+                    m('.label.label-default', 'Template'), m('select', {
+                        onchange: e => this.fusion.setTemplateID(e.target.value)
+                    }, templateStore.getList().map(c => m('option', c._id)))
+                ]),
+                m('.col-md-4', [
+                    m('.label.label-default', 'Data'), m('select', {
+                        onchange: e => this.fusion.setDataID(e.target.value)
+                    }, dataStore.getList().map(c => m('option', c._id)))
+                ]),
+                m('.col-md-4', [
+                    m('.label.label-default', 'Template'),
+                    m('input#path', {
+                        onkeyup: e => this.fusion.setPath(e.target.value)
+                    })
+                ]),
+                m('.col-md-12',
+                        m('.row', render({
+                            template: templateStore.getLocal(this.fusion.getTemplateID() ? this.fusion.getTemplateID() : ''),
+                            data: dataStore.getLocal(this.fusion.getDataID() ? this.fusion.getDataID() : ''),
+                            path: vnode.state.path
+                        }).map(c => c === null ? null : m(Wrapper, {obj: c}))))
+            ]),
+            m('pre', JSON.stringify(templateStore.getLocal(this.fusion.getTemplateID() ? this.fusion.getTemplateID() : ''))),
+            m('pre', JSON.stringify(dataStore.getLocal(this.fusion.getDataID() ? this.fusion.getDataID() : ''))),
+            m('pre', JSON.stringify(this)),
+            m(InteractiveJsonPath, {obj: dataStore.getLocal(this.fusion.getDataID() ? this.fusion.getDataID() : {})})
+        ];
     }
 }
+
+
+
 
 
 class Wrapper {
@@ -420,41 +165,7 @@ class Wrapper {
     }
 }
 
-class RenderJson {
-    oninit(vnode) {
-        vnode.state.collapsed = false;
-    }
-    toggleCollapsed(vnode, ev) {
-        vnode.state.collapsed = !vnode.state.collapsed;
-    }
-    view(vnode) {
-        return m('div', {style: vnode.attrs.indent ? 'margin-left:' + vnode.attrs.indent + 'px' : ''}, [
-            vnode.attrs.elem ? vnode.attrs.elem + ':' : null,
-            utils.propList(vnode.attrs.obj).length ?
-                    [
-                        '{',
-                        m('span', {style: 'opacity:.5', onclick: utils.event(vnode, this.toggleCollapsed)},
-                                [
-                                    ' -- ',
-                                    vnode.attrs.path ? vnode.attrs.path : '$'
-                                ]),
-                        m('br')
-                    ]
-                    : null,
-            (!vnode.state.collapsed && utils.propList(vnode.attrs.obj).length) ?
-                    utils.propList(vnode.attrs.obj).map(e =>
-                m(RenderJson,
-                        {
-                            indent: (vnode.attrs.indent ? vnode.attrs.indent + 10 : 10),
-                            obj: vnode.attrs.obj[e],
-                            elem: e,
-                            path: vnode.attrs.path ? vnode.attrs.path + '.' + e : '$.' + e
-                        })
-            ) : ('' + JSON.stringify(vnode.attrs.obj)), utils.propList(vnode.attrs.obj).length ? null : m('span', {style: 'opacity:.5'}, [' -- ', vnode.attrs.path ? vnode.attrs.path : '$']),
-            utils.propList(vnode.attrs.obj).length ? '}' : null, ',', m('br')
-        ]);
-    }
-}
+
 
 class NavbarBrand {
     view(vnode) {
@@ -543,28 +254,39 @@ class TemplateBuilder {
     toggleVirtual(vnode) {
         vnode.state.virtual = !vnode.state.virtual;
     }
+    save(vnode, ev) {
+        templateStore.save(JSON.parse(document.getElementById('to-area').value)[0]);
+    }
     view(vnode) {
         return m('.row', [
             m('.col-md-6', m('textarea#from-area[cols=20]', {style: "width:100%", cols: 20})),
             m('.col-md-6', m('textarea#to-area', {style: "width:100%", cols: 20})),
             m('.col-md-12', [
-                m('input[type=checkbox]', {value: vnode.state.virtual, onchange: m.withAttr('value', (v) => vnode.state.virtual = Boolean(v), vnode)}, 'virtual'),
-                m('button.btn.btn-default', {onclick: utils.event(vnode, this.convert)}, 'Convert')
+                m('input[type=checkbox]', {
+                    value: vnode.state.virtual,
+                    onchange: m.withAttr('value', (v) => vnode.state.virtual = Boolean(v), vnode)
+                }, 'virtual'),
+                m('button.btn.btn-default', {onclick: utils.event(vnode, this.convert)}, 'Convert'),
+                m('button.btn.btn-default', {onclick: utils.event(vnode, this.save)}, 'Save')
             ])
         ])
     }
 }
 
+class Title {
+    view(vnode) {
+        return m('.jumbotron', [
+            m('h1', 'Fusion power'),
+            m('h3', 'Building blocks')
+        ]);
+    }
+}
 
 var links = [
     {
         text: 'Rendering',
         link: '/',
-        component: RenderInRow
-    }, {
-        text: 'Render in Row',
-        link: '/title/:id',
-        component: RenderInRow
+        component: Title
     }, {
         text: 'Rendered template',
         link: '/render',
@@ -576,7 +298,9 @@ var links = [
     }, {
         text: 'JsonPath',
         link: '/jsonpath',
-        component: InteractiveJsonPath
+        component: {
+            render: (vnode) => m(InteractiveJsonPath, {obj: data})
+        }
     }, {
         text: 'Template Generator',
         link: '/templatebuilder',
@@ -585,14 +309,21 @@ var links = [
     {
         text: 'Fusions',
         link: '/fusion',
-        component: FusionSelector
+        component: {
+            render: (vnode) => m(FusionSelector, {caca: 'AA'})
+        }
+    },
+    {
+        text: 'CRUD',
+        link: '/crud',
+        component: CrudView
     }
 ];
 
-console.log('toMap', utils.toMap(links, 'link', 'component'))
-
-m.route.prefix('#');
 class Router {
+    constructor(vnode) {
+        m.route.prefix('#');
+    }
     oncreate(vnode) {
         m.route(vnode.dom, '/', utils.toMap(links, 'link', 'component'));
     }
@@ -612,60 +343,17 @@ class Adder {
     }
 }
 
-class Editbar {
-    oninit(vnode) {
-        vnode.state.tags = ['button', 'div', 'article', 'nav', 'a', 'input'];
-    }
-    applyClassToParent(vnode, ev) {
-        vnode.attrs.cc(ev.target.value);
-    }
-    applyTagToParent(vnode, ev) {
-        vnode.attrs.tc(ev.target.value);
-    }
-    view(vnode) {
-        return m('', 'Editbar', m('select', {onchange: utils.event(vnode, this.applyClassToParent)}, [
-            m('option', 'alert alert-warning'),
-            m('option', 'alert alert-success')]), m('select', {onchange: utils.event(vnode, this.applyTagToParent)}, [
-            vnode.state.tags.map(t => m('option', t))
-        ]));
-    }
-}
-
-class VariableComponent {
-    oninit(vnode) {
-        vnode.state.tag = '';
-        vnode.state.class = 'alert alert-warning';
-//        setInterval(utils.event(vnode, v => console.log(vnode.state.class)), 1000);
-    }
-    applyClass(vnode, ev) {
-        vnode.state.class = ev;
-    }
-    applyTag(vnode, ev) {
-        vnode.state.tag = ev;
-    }
-    addChild(vnode, ev) {
-        console.log(vnode.children);
-        // vnode.children  ADD A DATAMODEL FOR THE TEMPLATE HEREs
-    }
-    view(vnode) {
-        return  [
-            Context.editMode ? m(Editbar, {
-                t: vnode.state.tag,
-                tc: utils.event(vnode, this.applyTag),
-                c: vnode.state.class,
-                cc: utils.event(vnode, this.applyClass)
-            }) : null,
-            m(vnode.state.tag, {class: vnode.state.class}, vnode.children),
-            Context.editMode ? m(Adder, {cb: utils.event(vnode, this.addChild)}) : null];
-    }
-}
-
 class PageLayout {
     view(vnode) {
-        return [m(Navbar, {links: links}), m('.container', m(Alert.listcomponent), m('article', m(Router)))];
+        return [
+            m(Navbar, {links: links}),
+            m('.container', [
+                m(Alert.listcomponent),
+                m('article', m(Router))
+            ])
+        ];
     }
 }
 
-
-
 m.mount(document.getElementById('app'), PageLayout);
+
