@@ -3,37 +3,51 @@ import m from 'mithril';
 import utils from './utils';
 
 export default class RenderJson {
-    oninit(vnode) {
-        vnode.state.collapsed = false;
+    constructor(vnode) {
+        this.collapsed = false;
+        this.updateState(vnode);
     }
-    toggleCollapsed(vnode, ev) {
-        vnode.state.collapsed = !vnode.state.collapsed;
+    toggleCollapsed() {
+        this.collapsed = !this.collapsed;
+    }
+    onbeforeupdate(vnode) {
+        this.updateState(vnode);
+    }
+    updateState(vnode) {
+        this.obj = vnode.attrs.obj;
+        this.indent = vnode.attrs.indent;
+        this.elem = vnode.attrs.elem;
+        this.path = vnode.attrs.path;
+    }
+    hasSubprops() {
+        return utils.propList(this.obj).length;
     }
     view(vnode) {
-        return m('div', {style: vnode.attrs.indent ? 'margin-left:' + vnode.attrs.indent + 'px' : ''}, [
-            vnode.attrs.elem ? vnode.attrs.elem + ':' : null,
-            utils.propList(vnode.attrs.obj).length ?
+        return m('div', {style: this.indent ? 'margin-left:' + this.indent + 'px' : ''}, [
+            this.elem ? this.elem + ': ' : null,
+            this.hasSubprops() ?
                     [
                         '{',
-                        m('span', {style: 'opacity:.5', onclick: utils.event(vnode, this.toggleCollapsed)},
+                        m('span', {style: 'opacity:.5', onclick: e => this.toggleCollapsed()},
                                 [
                                     ' -- ',
-                                    vnode.attrs.path ? vnode.attrs.path : '$'
+                                    this.path ? this.path : '$'
                                 ]),
-                        m('br')
+                        !this.collapsed ? m('br') : ' '
                     ]
                     : null,
-            (!vnode.state.collapsed && utils.propList(vnode.attrs.obj).length) ?
-                    utils.propList(vnode.attrs.obj).map(e =>
+            (!this.collapsed && this.hasSubprops()) ?
+                    utils.propList(this.obj).map(e =>
                 m(RenderJson,
                         {
-                            indent: (vnode.attrs.indent ? vnode.attrs.indent + 10 : 10),
-                            obj: vnode.attrs.obj[e],
+                            indent: (this.indent ? this.indent + 10 : 10),
+                            obj: this.obj[e],
                             elem: e,
-                            path: vnode.attrs.path ? vnode.attrs.path + '.' + e : '$.' + e
+                            path: this.path ? this.path + '.' + e : '$.' + e
                         })
-            ) : ('' + JSON.stringify(vnode.attrs.obj)), utils.propList(vnode.attrs.obj).length ? null : m('span', {style: 'opacity:.5'}, [' -- ', vnode.attrs.path ? vnode.attrs.path : '$']),
-            utils.propList(vnode.attrs.obj).length ? '}' : null, ',', m('br')
+            ) : ('' /*+ JSON.stringify(vnode.attrs.obj)*/),
+            this.hasSubprops() ? null : m('span', {style: 'opacity:.5'}, [' -- ', this.path ? this.path : '$']),
+            this.hasSubprops() ? '}' : null, ',', m('br')
         ]);
     }
 }

@@ -5,7 +5,6 @@ export default class DataStore {
     constructor(collectionName) {
         this.url = "/resource/" + collectionName + "/";
         this.collectionName = collectionName;
-        this.readLocal();
         this.fetchObjects();
     }
     getList() {
@@ -20,24 +19,12 @@ export default class DataStore {
         });
         return result;
     }
-    readLocal() {
-        try {
-            this.collection = JSON.parse(localStorage.getItem(collectionName)) || [];
-        } catch (e) {
-            console.log('ERROR in storage. Resetting local storage.');
-            this.collection = [];
-        }
-    }
-    writeLocal() {
-        localStorage.setItem(this.collectionName, JSON.stringify(this.collection));
-    }
     fetchObjects(fn) {
         m.request({
             url: this.url,
             method: 'GET'
         }).then(result => {
             this.collection = result;
-            this.writeLocal();
             utils.safe(fn)(result);
         });
     }
@@ -48,7 +35,6 @@ export default class DataStore {
             method: 'DELETE'
         }).then(result => {
             console.log('delete result', result);
-            this.writeLocal();
             utils.safe(fn)(result);
         });
     }

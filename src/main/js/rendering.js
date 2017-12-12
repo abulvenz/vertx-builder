@@ -1,12 +1,8 @@
 
 import jsonPath from './jsonpath';
 import utils from './utils';
-
-var render = input => {
+var render = ({template = null, data = null, path = null}) => {
     var output = [];
-
-    let template = input.template || null;
-
     var appendTemplateCopyToOutput = value => {
         let t = utils.copy(template);
         utils.traverse(t, (root, member) => {
@@ -16,14 +12,12 @@ var render = input => {
         });
         output.push(t);
     };
-
-    if (input.data && input.path) {
-        let result = jsonPath(input.data, input.path);
+    if (data && path) {
+        let result = jsonPath(data, path);
         result.map(appendTemplateCopyToOutput);
     } else {
-        appendTemplateCopyToOutput(input.data);
+        appendTemplateCopyToOutput(data);
     }
     return output;
 };
-
 export default render;

@@ -8,14 +8,14 @@ import Alert from './alert';
 import RenderJson from './renderjson';
 import DataStore from './datastore';
 import InteractiveJsonPath from './interactivejsonpath';
+import CrudView from './crudview';
+import Navbar from './navbar';
+import Context from './context';
 
 /** Later use https://github.com/j2css/j2c for css-json */
 
 
-let Context = {
-    editMode: false,
-    online: false
-};
+
 
 console.log('before')
 var templateStore = new DataStore('template');
@@ -33,44 +33,6 @@ console.log('lost list', templateStore.getList())
 //templateStore.save(booktemplate);
 console.log('after')
 
-class CrudView {
-    oninit(vnode) {
-        vnode.state.resources = [];
-        m.request({
-            url: '/resource/all'
-        }).then(result => {
-            vnode.state.resources = result;
-            m.redraw();
-        });
-    }
-    selectCollection(vnode, ev) {
-        vnode.state.datastore = new DataStore(ev.target.value);
-        vnode.state.datastore.fetchObjects(r => {
-            if (vnode.state.datastore.getList().length > 0) {
-                node.state.selectedObject = vnode.state.datastore.getList()[0];
-            }
-        });
-    }
-    selectObject(vnode, ev) {
-        vnode.state.selectedObject =
-                vnode.state.datastore.getLocal(ev.target.value);
-        m.redraw();
-        console.log('selectedObject', vnode.state.selectedObject)
-    }
-    view(vnode) {
-        return [
-            m('h1', 'CrudView'),
-            m('select', {
-                onchange: utils.event(vnode, this.selectCollection)
-            }, vnode.state.resources.map(o => m('option', o))),
-            vnode.state.datastore ? m('select', {
-                onchange: utils.event(vnode, this.selectObject)
-            }, vnode.state.datastore.getList().map(o => m('option', o._id))) : null,
-            m('textarea', JSON.stringify(vnode.state.selectedObject, undefined, 2)),
-            m(RenderJson, {obj: vnode.state.selectedObject})
-        ];
-    }
-}
 
 /* Data object */
 class Fusion {
@@ -117,18 +79,18 @@ class FusionSelector {
             m('h1', 'FusionSelector'),
             m('.row', [
                 m('.col-md-4', [
-                    m('.label.label-default', 'Template'), m('select', {
+                    m('.label.label-default', 'Template'), m('select.custom-select', {
                         onchange: e => this.fusion.setTemplateID(e.target.value)
                     }, templateStore.getList().map(c => m('option', c._id)))
                 ]),
                 m('.col-md-4', [
-                    m('.label.label-default', 'Data'), m('select', {
+                    m('.label.label-default', 'Data'), m('select.custom-select', {
                         onchange: e => this.fusion.setDataID(e.target.value)
                     }, dataStore.getList().map(c => m('option', c._id)))
                 ]),
                 m('.col-md-4', [
                     m('.label.label-default', 'Template'),
-                    m('input#path', {
+                    m('input.form-control#path', {
                         onkeyup: e => this.fusion.setPath(e.target.value)
                     })
                 ]),
@@ -167,76 +129,6 @@ class Wrapper {
 
 
 
-class NavbarBrand {
-    view(vnode) {
-        return m("a.navbar-brand[href='#']", vnode.attrs, vnode.children);
-    }
-}
-
-class NavbarToggleButton {
-    view(vnode) {
-        return m("button.navbar-toggler[aria-controls='navbarSupportedContent'][aria-expanded='false'][aria-label='Toggle navigation'][data-target='#navbarSupportedContent'][data-toggle='collapse'][type='button']",
-                m("span.navbar-toggler-icon"));
-    }
-}
-
-class Navbar {
-    view(vnode) {
-        return m("nav.navbar.navbar-expand-lg.navbar-light.bg-light",
-                [
-                    //   m(NavbarBrand, 'Navbar'),
-                    m(NavbarToggleButton),
-                    m(".collapse.navbar-collapse[id='navbarSupportedContent']",
-                            [
-                                m("ul.navbar-nav.mr-auto",
-                                        [
-                                            vnode.attrs.links.map(l => m("li.nav-item", m("a.nav-link", {href: '#' + l.link}, l.text))),
-                                            m("li.nav-item.dropdown",
-                                                    [
-                                                        m("a.nav-link.dropdown-toggle[aria-expanded='false'][aria-haspopup='true'][data-toggle='dropdown'][href='#'][id='navbarDropdown'][role='button']",
-                                                                "Dropdown"
-                                                                ),
-                                                        m(".dropdown-menu[aria-labelledby='navbarDropdown']",
-                                                                [
-                                                                    m("a.dropdown-item[href='#/title/Helo']",
-                                                                            "Action"
-                                                                            ),
-                                                                    m("a.dropdown-item[href='#/render']",
-                                                                            "render wrapper"
-                                                                            ),
-                                                                    m(".dropdown-divider"),
-                                                                    m("a.dropdown-item[href='#/jsonpath']",
-                                                                            "Json Path"
-                                                                            ),
-                                                                    m("a.dropdown-item[href='#/templatebuilder']",
-                                                                            "TemplateBuilder"
-                                                                            )
-                                                                ]
-                                                                )
-                                                    ]
-                                                    ),
-//                                            m("li.nav-item",m("a.nav-link.disabled[href='#']", "Disabled" ) ),
-                                            m("button.btn.btn-primary[aria-pressed='false'][autocomplete='off'][data-toggle='button'][type='button']", {onclick: ev => {
-                                                    Context.editMode = !Context.editMode;
-                                                }},
-                                                    Context.editMode ? "Don't edit" : "Edit"
-                                                    )
-                                        ]
-                                        ),
-                                m("form.form-inline.my-2.my-lg-0",
-                                        [
-                                            m("input.form-control.mr-sm-2[aria-label='Search'][placeholder='Search'][type='search']"),
-                                            m("button.btn.btn-outline-success.my-2.my-sm-0[type='submit']", {onclick: ev => Alert.messages.push({text: 'hello', title: 'HoneyPot', key: Math.random()})},
-                                                    "Search"
-                                                    )
-                                        ]
-                                        )
-                            ]
-                            )
-                ]
-                );
-    }
-}
 
 class TemplateBuilder {
     oninit(vnode) {
@@ -287,21 +179,21 @@ var links = [
         text: 'Rendering',
         link: '/',
         component: Title
-    }, {
-        text: 'Rendered template',
-        link: '/render',
-        component: {
-            render: (vnode) => {
-                return [m(Wrapper, {obj: cardTemplate}), m(RenderJson, {obj: renderedTemplate})];
-            }
-        }
-    }, {
-        text: 'JsonPath',
-        link: '/jsonpath',
-        component: {
-            render: (vnode) => m(InteractiveJsonPath, {obj: data})
-        }
-    }, {
+    }, /*{
+     text: 'Rendered template',
+     link: '/render',
+     component: {
+     render: (vnode) => {
+     return [m(Wrapper, {obj: cardTemplate}), m(RenderJson, {obj: renderedTemplate})];
+     }
+     }
+     }, {
+     text: 'JsonPath',
+     link: '/jsonpath',
+     component: {
+     render: (vnode) => m(InteractiveJsonPath, {obj: data})
+     }
+     },*/ {
         text: 'Template Generator',
         link: '/templatebuilder',
         component: TemplateBuilder
@@ -310,7 +202,7 @@ var links = [
         text: 'Fusions',
         link: '/fusion',
         component: {
-            render: (vnode) => m(FusionSelector, {caca: 'AA'})
+            render: (vnode) => m(FusionSelector)
         }
     },
     {
